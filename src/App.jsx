@@ -54,7 +54,7 @@ const Upload = ({ onRead, className, children }) => {
       <input
         type="file"
         ref={inputRef}
-        accept=".json"
+        accept=".json,.txt"
         className="hidden"
         onChange={handleFileChange}
       />
