@@ -23,7 +23,7 @@ const Header = ({ children, className }) => {
   );
 };
 
-const Upload = ({ onRead, className, children }) => {
+const Upload = ({ onRead, className }) => {
   const inputRef = useRef(null);
   const handleClick = () => {
     inputRef.current.click();
@@ -78,10 +78,11 @@ const Select = ({ value, title, onChange, openKey, onOpen, options = [] }) => {
   const handleToggle = () => {
     if (!open) {
       onOpen(title);
+      setOpen(true);
     } else {
       onOpen("");
+      setOpen(false);
     }
-    setOpen(!open);
   };
   useEffect(() => {
     if (openKey !== title) {
@@ -91,7 +92,11 @@ const Select = ({ value, title, onChange, openKey, onOpen, options = [] }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (selectRef.current && !selectRef.current.contains(event.target)) {
+      if (
+        selectRef.current &&
+        !selectRef.current.contains(event.target) &&
+        !event.target.parentNode?.dataset.noclose
+      ) {
         setOpen(false);
         onOpen("");
       }
@@ -110,12 +115,12 @@ const Select = ({ value, title, onChange, openKey, onOpen, options = [] }) => {
           open && "!text-[#f2d2a1]",
         )}
         onClick={handleToggle}
+        data-noclose
       >
         <span>{activeLabel || title}</span>
         {open ? (
           <svg
             t="1757760383120"
-            class="icon"
             viewBox="0 0 1024 1024"
             version="1.1"
             xmlns="http://www.w3.org/2000/svg"
@@ -132,7 +137,6 @@ const Select = ({ value, title, onChange, openKey, onOpen, options = [] }) => {
         ) : (
           <svg
             t="1757760396722"
-            class="icon"
             viewBox="0 0 1024 1024"
             version="1.1"
             xmlns="http://www.w3.org/2000/svg"
@@ -155,6 +159,7 @@ const Select = ({ value, title, onChange, openKey, onOpen, options = [] }) => {
         >
           {options.map((item) => (
             <div
+              key={item.value}
               className={clsx(
                 "rounded-lg text-center text-xs min-w-[100px] py-2.5 bg-[#363a53] text-[#9d8e7e]",
                 active === item.value && "!bg-[#35374c] !text-[#f2d2a1]",
@@ -171,39 +176,53 @@ const Select = ({ value, title, onChange, openKey, onOpen, options = [] }) => {
 };
 
 const Book = ({ data, sn }) => {
+  const [open, setOpen] = useState(false);
   const handleClick = () => {
-    // https://weread.qq.com/web/reader/48432660813ab6fe3g0106fd#outline?noScroll=1
-    const link = `https://weread.qq.com/web/reader/${sn}#outline?noScroll=1`;
-    console.log("link:", link, data);
+    setOpen(!open);
   };
   return (
-    <div
-      className="px-4 py-3 h-[160px] flex gap-5 w-full overflow-hidden items-center hover:bg-[#252a45]"
-      onClick={handleClick}
-    >
-      <img className="w-[90px] h-[130px]" src={data.cover} />
-      <div className="flex flex-col justify-between gap-1 flex-1 h-full">
-        <div className="flex flex-col gap-1">
-          <div className="font-bold text-[#f2d2a1]">{data.title}</div>
-          <div className="text-left text-[#b09c84] text-sm">{data.author}</div>
+    <div class="flex flex-col" title={sn}>
+      <div
+        className="px-4 py-3 h-[170px] flex gap-5 w-full overflow-hidden items-center hover:bg-[#252a45]"
+        onClick={handleClick}
+      >
+        <img className="w-[90px] h-[140px]" src={data.cover} />
+        <div className="flex flex-col justify-between flex-1 h-full">
+          <div className="flex flex-col gap-1">
+            <div className="font-bold text-[#f2d2a1]">{data.title}</div>
+            <div className="text-left text-[#b09c84] text-sm">
+              {data.author}
+              {data.translator && (
+                <span className="ml-4 text-[#7d736e]">
+                  {data.translator} 译
+                </span>
+              )}
+            </div>
+          </div>
+          <div
+            title={data.intro}
+            className="text-sm text-[#7d736e] line-clamp-2 text-left"
+          >
+            {data.intro}
+          </div>
+          <div className="flex justify-between">
+            <div>
+              <span className="font-bold text-lg text-[#f2d2a1]">
+                {data.price}
+              </span>
+            </div>
+          </div>
         </div>
+      </div>
+      {open && (
         <div
           title={data.intro}
-          className="text-sm text-[#7d736e] line-clamp-2 text-left"
+          className="px-6 text-[#7d736e] indent-8 bg-[#252a45] py-4"
+          onClick={() => setOpen(false)}
         >
           {data.intro}
         </div>
-        <div className="flex justify-between">
-          <div>
-            <span className="font-bold text-lg text-[#f2d2a1]">
-              {data.price}
-            </span>
-          </div>
-          {/* <div className="font-bold"> */}
-          {/*   {PayTypeMap[data.payType] || data.payType} */}
-          {/* </div> */}
-        </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -231,6 +250,7 @@ function App() {
       });
 
       setAllBooks(_books);
+      console.log("_books:", _books);
       setRawBooks(_books);
       setCategorys([
         { label: "全部", value: "all" },
@@ -325,7 +345,7 @@ function App() {
         </div>
       </div>
       {rawBooks.length ? (
-        <div className="flex flex-col gap-8 py-3 overflow-auto">
+        <div className="flex flex-col gap-8 pt-3 overflow-auto pb-8">
           <div className="flex flex-col gap-1">
             {allBooks.length ? (
               allBooks.map((book) => (
